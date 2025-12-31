@@ -1,0 +1,5 @@
+"""Database models."""
+from app.models.base import Base, BaseModel
+
+__all__ = ["Base", "BaseModel"]
+
