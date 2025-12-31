@@ -27,3 +27,6 @@ class BaseModel(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True, default=None)
 
+    def __repr__(self) -> str:
+        """String representation of the model."""
+        return f"<{self.__class__.__name__}(id={self.id})>"
