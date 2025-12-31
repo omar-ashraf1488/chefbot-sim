@@ -38,10 +38,10 @@ class Settings(BaseSettings):
     def all_cors_origins(self) -> list[str]:
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
 
-    PROJECT_NAME: str
-    POSTGRES_SERVER: str
+    PROJECT_NAME: str = "chefbot-sim"
+    POSTGRES_SERVER: str = ""
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
+    POSTGRES_USER: str = ""
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
