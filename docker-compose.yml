@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: chefbot-sim-db
+    environment:
+      POSTGRES_USER: chefbot
+      POSTGRES_PASSWORD: changethis
+      POSTGRES_DB: chefbot_sim
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chefbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: chefbot-sim-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Application settings
+      PROJECT_NAME: ChefBot-Sim
+      ENVIRONMENT: local
+      API_V1_STR: /api/v1
+      
+      # Database settings
+      POSTGRES_SERVER: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: chefbot
+      POSTGRES_PASSWORD: changethis
+      POSTGRES_DB: chefbot_sim
+      
+      # CORS settings
+      BACKEND_CORS_ORIGINS: http://localhost:3000,http://localhost:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/chefbot-sim/app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
