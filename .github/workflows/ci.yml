@@ -36,6 +36,15 @@ jobs:
         run: poetry install --no-interaction --no-root
       
       - name: Run tests
+        # TODO: These are dummy values for testing. Tests use SQLite in-memory, so these aren't used.
+        # If you need real database credentials later (e.g., for integration tests),
+        # use GitHub Secrets: ${{ secrets.POSTGRES_USER }}, etc.
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
         run: poetry run pytest
 
   docker:
