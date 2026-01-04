@@ -10,7 +10,6 @@ class OrderBase(BaseModel):
     subscription_id: UUID
     recipes: list[dict]  # JSON list: [{"id": "uuid", "name": "Recipe Name"}, ...]
     total_amount: Decimal  # Total price for this order
-    delivery_date: datetime  # When the box is delivered
     status: str  # pending, shipped, delivered, cancelled
     order_date: datetime  # When the order was placed
     

@@ -1,8 +1,8 @@
 """Add Order model
 
-Revision ID: 0cab5bc94741
+Revision ID: da5a85a9388d
 Revises: f92750ad7e5d
-Create Date: 2026-01-04 08:58:52.318917
+Create Date: 2026-01-04 09:59:16.722863
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '0cab5bc94741'
+revision: str = 'da5a85a9388d'
 down_revision: Union[str, Sequence[str], None] = 'f92750ad7e5d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,7 +25,6 @@ def upgrade() -> None:
     sa.Column('subscription_id', sa.UUID(), nullable=False),
     sa.Column('recipes', postgresql.JSON(astext_type=sa.Text()), nullable=False),
     sa.Column('total_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('delivery_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
     sa.Column('order_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('id', sa.UUID(), nullable=False),
@@ -35,7 +34,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['subscription_id'], ['subscriptions.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_orders_delivery_date'), 'orders', ['delivery_date'], unique=False)
     op.create_index(op.f('ix_orders_id'), 'orders', ['id'], unique=False)
     op.create_index(op.f('ix_orders_status'), 'orders', ['status'], unique=False)
     op.create_index(op.f('ix_orders_subscription_id'), 'orders', ['subscription_id'], unique=False)
@@ -48,6 +46,5 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_orders_subscription_id'), table_name='orders')
     op.drop_index(op.f('ix_orders_status'), table_name='orders')
     op.drop_index(op.f('ix_orders_id'), table_name='orders')
-    op.drop_index(op.f('ix_orders_delivery_date'), table_name='orders')
     op.drop_table('orders')
     # ### end Alembic commands ###
