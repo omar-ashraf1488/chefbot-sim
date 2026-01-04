@@ -4,6 +4,7 @@ from app.models.user import User
 from app.models.subscription import Subscription
 from app.models.recipe import Recipe
 from app.models.order import Order
+from app.models.delivery import Delivery
 
-__all__ = ["Base", "BaseModel", "User", "Subscription", "Recipe", "Order"]
+__all__ = ["Base", "BaseModel", "User", "Subscription", "Recipe", "Order", "Delivery"]
 
