@@ -9,6 +9,9 @@ from app.models.base import Base
 # Import all models so Base.metadata knows about them
 from app.models.user import User  # noqa: F401
 from app.models.subscription import Subscription  # noqa: F401
+from app.models.recipe import Recipe  # noqa: F401
+from app.models.order import Order  # noqa: F401
+from app.models.delivery import Delivery  # noqa: F401
 
 
 # Create test database engine (using SQLite in-memory for simplicity)
