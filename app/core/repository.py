@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Generic, TypeVar, Type, Optional, List
 from uuid import UUID
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import func, select, update, delete
 from sqlalchemy.orm import Session
 
 from app.models.base import BaseModel
@@ -135,4 +135,16 @@ class BaseRepository(Generic[ModelType]):
             True if exists, False otherwise
         """
         return self.get(id) is not None
+    
+    def count(self, **filters) -> int:
+        """Count total number of models matching filters.
+        
+        Args:
+            **filters: Field filters to apply
+            
+        Returns:
+            Total count of matching models
+        """
+        stmt = select(func.count(self.model.id)).filter_by(**filters)
+        return self.db.scalar(stmt) or 0
 
