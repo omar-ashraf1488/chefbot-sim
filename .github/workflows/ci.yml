@@ -6,6 +6,9 @@ on:
 
 jobs:
   test:
+    strategy:
+      matrix:
+        test-category: [models, schemas, api, repositories]
     runs-on: ubuntu-latest
     
     steps:
@@ -35,7 +38,7 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
       
-      - name: Run tests
+      - name: Run ${{ matrix.test-category }} tests
         # TODO: These are dummy values for testing. Tests use SQLite in-memory, so these aren't used.
         # If you need real database credentials later (e.g., for integration tests),
         # use GitHub Secrets: ${{ secrets.POSTGRES_USER }}, etc.
@@ -45,7 +48,7 @@ jobs:
           POSTGRES_USER: testuser
           POSTGRES_PASSWORD: testpass
           POSTGRES_DB: testdb
-        run: poetry run pytest
+        run: poetry run pytest tests/${{ matrix.test-category }}/
 
   docker:
     runs-on: ubuntu-latest
