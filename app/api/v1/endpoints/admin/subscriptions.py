@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.api.v1.schemas import PaginatedResponse, PaginationMeta, Response
 from app.core.db import get_db
 from app.core.repositories.subscription_repository import SubscriptionRepository
+from app.core.repositories.user_repository import UserRepository
 from app.schemas.subscription import SubscriptionCreate, SubscriptionResponse, SubscriptionUpdate
 
 router = APIRouter()
