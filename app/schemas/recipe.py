@@ -57,6 +57,52 @@ class RecipeCreate(RecipeBase):
     pass
 
 
+class RecipeUpdate(BaseModel):
+    """Schema for updating a recipe (all fields optional)."""
+    name: str | None = None
+    description: str | None = None
+    calories: int | None = None
+    tags: list[str] | None = None
+    price: Optional[Decimal] = None
+    preparation_time: int | None = None
+    servings: int | None = None
+    image_url: str | None = None
+    
+    @field_validator('calories')
+    @classmethod
+    def validate_calories(cls, v: int | None) -> int | None:
+        """Validate that calories is positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Calories must be a positive number")
+        return v
+    
+    @field_validator('price')
+    @classmethod
+    def validate_price(cls, v: Optional[Decimal]) -> Optional[Decimal]:
+        """Validate that price is positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Price must be a positive number")
+        return v
+    
+    @field_validator('preparation_time', 'servings')
+    @classmethod
+    def validate_positive_integers(cls, v: int | None) -> int | None:
+        """Validate that preparation_time and servings are positive if provided."""
+        if v is not None and v <= 0:
+            raise ValueError("Must be a positive number")
+        return v
+    
+    @field_validator('tags')
+    @classmethod
+    def validate_tags(cls, v: list[str] | None) -> list[str] | None:
+        """Validate that tags is a list of strings if provided."""
+        if v is not None and not isinstance(v, list):
+            raise ValueError("Tags must be a list of strings")
+        if v is not None and not all(isinstance(tag, str) for tag in v):
+            raise ValueError("All tags must be strings")
+        return v
+
+
 class RecipeResponse(RecipeBase):
     """Schema for recipe response (includes all fields except deleted_at)."""
     model_config = ConfigDict(from_attributes=True)
