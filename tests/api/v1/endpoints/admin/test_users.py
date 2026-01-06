@@ -1,8 +1,10 @@
 """Tests for admin users API endpoints."""
 import pytest
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 from uuid import uuid4
 
+from app.core.repositories.subscription_repository import SubscriptionRepository
 from app.core.repositories.user_repository import UserRepository
 
 
@@ -382,4 +384,43 @@ def test_list_users_after_delete(client: TestClient, db_session):
     # Note: This behavior depends on your repository implementation
     # Currently get_all doesn't filter by deleted_at, so both will show
     assert data["pagination"]["total"] == 2
+
+
+def test_get_user_subscriptions(client: TestClient, db_session):
+    """Test getting all subscriptions for a specific user."""
+    user_repo = UserRepository(db_session)
+    subscription_repo = SubscriptionRepository(db_session)
+    
+    user = user_repo.create(
+        email="test@example.com",
+        first_name="Test",
+        last_name="User",
+        timezone="UTC"
+    )
+    
+    # Create subscriptions for this user
+    for i in range(3):
+        subscription_repo.create(
+            user_id=user.id,
+            status="Active",
+            started_at=datetime.now(timezone.utc)
+        )
+    
+    response = client.get(f"/api/v1/admin/users/{user.id}/subscriptions")
+    
+    assert response.status_code == 200
+    data = response.json()
+    
+    assert data["success"] is True
+    assert data["pagination"]["total"] == 3
+    assert all(sub["user_id"] == str(user.id) for sub in data["data"])
+
+
+def test_get_user_subscriptions_user_not_found(client: TestClient, db_session):
+    """Test getting subscriptions for non-existent user."""
+    fake_id = uuid4()
+    
+    response = client.get(f"/api/v1/admin/users/{fake_id}/subscriptions")
+    
+    assert response.status_code == 404
 
