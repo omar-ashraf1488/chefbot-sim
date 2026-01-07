@@ -48,6 +48,30 @@ class OrderCreate(OrderBase):
     pass
 
 
+class OrderUpdate(BaseModel):
+    """Schema for updating an order (limited fields, primarily status)."""
+    status: str | None = None
+    total_amount: Decimal | None = None
+    
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        """Validate that status is one of the allowed values if provided."""
+        if v is not None:
+            allowed_statuses = {"pending", "shipped", "delivered", "cancelled"}
+            if v not in allowed_statuses:
+                raise ValueError(f"Invalid status: {v}. Must be one of: {', '.join(allowed_statuses)}")
+        return v
+    
+    @field_validator('total_amount')
+    @classmethod
+    def validate_total_amount(cls, v: Decimal | None) -> Decimal | None:
+        """Validate that total_amount is positive if provided."""
+        if v is not None and v < 0:
+            raise ValueError("Total amount must be a positive number")
+        return v
+
+
 class OrderResponse(OrderBase):
     """Schema for order response (includes all fields except deleted_at)."""
     model_config = ConfigDict(from_attributes=True)
