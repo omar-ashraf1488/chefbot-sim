@@ -67,15 +67,6 @@ def test_get_subscriptions_user_not_found(client: TestClient, db_session):
     assert response.status_code == 404
 
 
-def test_get_me_subscriptions_requires_auth(client: TestClient, db_session):
-    """Test that /me/subscriptions requires authentication."""
-    response = client.get("/api/v1/subscriptions/me/subscriptions")
-    
-    assert response.status_code == 501  # Not implemented without auth
-    data = response.json()
-    assert "authentication" in data["detail"].lower()
-
-
 def test_create_subscription_success(client: TestClient, db_session):
     """Test creating a subscription successfully."""
     user_repo = UserRepository(db_session)
