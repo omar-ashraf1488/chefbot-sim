@@ -391,8 +391,6 @@ def test_list_users_after_delete(client: TestClient, db_session):
     assert data["pagination"]["total"] == 1
     assert len(data["data"]) == 1
     assert data["data"][0]["id"] == str(user2.id)
-    # Currently get_all doesn't filter by deleted_at, so both will show
-    assert data["pagination"]["total"] == 2
 
 
 def test_get_user_subscriptions(client: TestClient, db_session):
