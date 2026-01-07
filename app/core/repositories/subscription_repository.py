@@ -19,7 +19,7 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         super().__init__(db, Subscription)
     
     def get_by_user_id(self, user_id: UUID, skip: int = 0, limit: int = 100):
-        """Get all subscriptions for a specific user.
+        """Get all subscriptions for a specific user (excludes soft-deleted records).
         
         Args:
             user_id: The UUID of the user
@@ -32,13 +32,14 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         stmt = (
             select(self.model)
             .filter_by(user_id=user_id)
+            .filter(self.model.deleted_at.is_(None))
             .offset(skip)
             .limit(limit)
         )
         return list(self.db.scalars(stmt).all())
     
     def count_by_user_id(self, user_id: UUID) -> int:
-        """Count subscriptions for a specific user.
+        """Count subscriptions for a specific user (excludes soft-deleted records).
         
         Args:
             user_id: The UUID of the user
@@ -46,6 +47,6 @@ class SubscriptionRepository(BaseRepository[Subscription]):
         Returns:
             Total count of subscriptions for the user
         """
-        stmt = select(func.count(self.model.id)).filter_by(user_id=user_id)
+        stmt = select(func.count(self.model.id)).filter_by(user_id=user_id).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt) or 0
 
