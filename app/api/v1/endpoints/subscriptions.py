@@ -13,28 +13,6 @@ from app.schemas.subscription import SubscriptionCreate, SubscriptionResponse, S
 router = APIRouter()
 
 
-@router.get("/me/subscriptions", response_model=PaginatedResponse[SubscriptionResponse], status_code=200)
-def get_my_subscriptions(
-    skip: int = Query(0, ge=0, description="Number of records to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Maximum number of records to return"),
-    db: Session = Depends(get_db),
-    # user_id: UUID = Depends(get_current_user)  # Would be used with auth
-):
-    """Get current user's subscriptions.
-    
-    Authenticated endpoint. Returns paginated list of current user's subscriptions.
-    Note: In production, this would require authentication to get the current user_id.
-    This endpoint will be implemented when authentication is added.
-    """
-    # TODO: Get user_id from authenticated user when auth service is integrated
-    # user_id = current_user.id
-    
-    raise HTTPException(
-        status_code=501,
-        detail="This endpoint requires authentication. Use /api/v1/subscriptions?user_id={uuid} for testing without auth."
-    )
-
-
 @router.get("", response_model=PaginatedResponse[SubscriptionResponse], status_code=200)
 def get_subscriptions(
     user_id: UUID = Query(..., description="User ID to get subscriptions for"),
