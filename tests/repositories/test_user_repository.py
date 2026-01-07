@@ -175,10 +175,15 @@ def test_soft_delete_user(db_session: Session):
     assert soft_deleted_user is not None
     assert soft_deleted_user.deleted_at is not None
     assert soft_deleted_user.id == user.id
-    # User still exists in database
-    found_user = repo.get(user.id)
+    # User still exists in database (verify by querying directly)
+    from sqlalchemy import select
+    from app.models.user import User
+    stmt = select(User).filter_by(id=user.id)
+    found_user = db_session.scalar(stmt)
     assert found_user is not None
     assert found_user.deleted_at is not None
+    # But get() should return None (soft-deleted records are filtered)
+    assert repo.get(user.id) is None
 
 
 def test_exists_user(db_session: Session):
