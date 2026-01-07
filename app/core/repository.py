@@ -44,18 +44,19 @@ class BaseRepository(Generic[ModelType]):
         return instance
     
     def get(self, id: UUID) -> Optional[ModelType]:
-        """Get a model by ID.
+        """Get a model by ID (excludes soft-deleted records).
         
         Args:
             id: The UUID of the model
             
         Returns:
-            The model instance or None if not found
+            The model instance or None if not found or soft-deleted
         """
-        return self.db.get(self.model, id)
+        stmt = select(self.model).filter_by(id=id).filter(self.model.deleted_at.is_(None))
+        return self.db.scalar(stmt)
     
     def get_by(self, **kwargs) -> Optional[ModelType]:
-        """Get a single model by field values.
+        """Get a single model by field values (excludes soft-deleted records).
         
         Args:
             **kwargs: Field names and values to filter by
@@ -63,11 +64,11 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             The first matching model or None
         """
-        stmt = select(self.model).filter_by(**kwargs)
+        stmt = select(self.model).filter_by(**kwargs).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt)
     
     def get_all(self, skip: int = 0, limit: int = 100, **filters) -> List[ModelType]:
-        """Get all models with optional filtering and pagination.
+        """Get all models with optional filtering and pagination (excludes soft-deleted records).
         
         Args:
             skip: Number of records to skip
@@ -77,7 +78,7 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             List of model instances
         """
-        stmt = select(self.model).filter_by(**filters).offset(skip).limit(limit)
+        stmt = select(self.model).filter_by(**filters).filter(self.model.deleted_at.is_(None)).offset(skip).limit(limit)
         return list(self.db.scalars(stmt).all())
     
     def update(self, id: UUID, **kwargs) -> Optional[ModelType]:
@@ -123,7 +124,16 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             The updated model instance or None if not found
         """
-        return self.update(id, deleted_at=datetime.utcnow())
+        # Use direct database update to avoid get() filtering out already soft-deleted records
+        # For soft_delete, we need to update even if the record isn't found by get()
+        stmt = update(self.model).where(self.model.id == id).values(deleted_at=datetime.utcnow())
+        result = self.db.execute(stmt)
+        self.db.commit()
+        
+        if result.rowcount > 0:
+            # Get the updated instance directly (including soft-deleted ones)
+            return self.db.get(self.model, id)
+        return None
     
     def exists(self, id: UUID) -> bool:
         """Check if a model exists by ID.
@@ -137,7 +147,7 @@ class BaseRepository(Generic[ModelType]):
         return self.get(id) is not None
     
     def count(self, **filters) -> int:
-        """Count total number of models matching filters.
+        """Count total number of models matching filters (excludes soft-deleted records).
         
         Args:
             **filters: Field filters to apply
@@ -145,6 +155,6 @@ class BaseRepository(Generic[ModelType]):
         Returns:
             Total count of matching models
         """
-        stmt = select(func.count(self.model.id)).filter_by(**filters)
+        stmt = select(func.count(self.model.id)).filter_by(**filters).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt) or 0
 
