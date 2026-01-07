@@ -19,7 +19,7 @@ class OrderRepository(BaseRepository[Order]):
         super().__init__(db, Order)
     
     def get_by_subscription_id(self, subscription_id: UUID, skip: int = 0, limit: int = 100):
-        """Get all orders for a specific subscription.
+        """Get all orders for a specific subscription (excludes soft-deleted records).
         
         Args:
             subscription_id: The UUID of the subscription
@@ -32,13 +32,14 @@ class OrderRepository(BaseRepository[Order]):
         stmt = (
             select(self.model)
             .filter_by(subscription_id=subscription_id)
+            .filter(self.model.deleted_at.is_(None))
             .offset(skip)
             .limit(limit)
         )
         return list(self.db.scalars(stmt).all())
     
     def count_by_subscription_id(self, subscription_id: UUID) -> int:
-        """Count orders for a specific subscription.
+        """Count orders for a specific subscription (excludes soft-deleted records).
         
         Args:
             subscription_id: The UUID of the subscription
@@ -47,6 +48,6 @@ class OrderRepository(BaseRepository[Order]):
             Total count of orders for the subscription
         """
         from sqlalchemy import func
-        stmt = select(func.count(self.model.id)).filter_by(subscription_id=subscription_id)
+        stmt = select(func.count(self.model.id)).filter_by(subscription_id=subscription_id).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt) or 0
 
