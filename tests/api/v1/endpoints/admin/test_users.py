@@ -337,10 +337,16 @@ def test_delete_user_success(client: TestClient, db_session):
     
     assert response.status_code == 204
     
-    # Verify user is soft deleted (deleted_at is set)
-    deleted_user = user_repo.get(user.id)
+    # Verify user is soft deleted (query database directly to check deleted_at)
+    from sqlalchemy import select
+    from app.models.user import User
+    stmt = select(User).filter_by(id=user.id)
+    deleted_user = db_session.scalar(stmt)
     assert deleted_user is not None
     assert deleted_user.deleted_at is not None
+    
+    # Verify user is not returned by normal get() (soft-deleted records are filtered)
+    assert user_repo.get(user.id) is None
 
 
 def test_delete_user_not_found(client: TestClient, db_session):
@@ -355,7 +361,7 @@ def test_delete_user_not_found(client: TestClient, db_session):
 
 
 def test_list_users_after_delete(client: TestClient, db_session):
-    """Test that soft-deleted users are still counted (or verify behavior)."""
+    """Test that soft-deleted users are filtered out from list."""
     user_repo = UserRepository(db_session)
     
     # Create users
@@ -376,12 +382,15 @@ def test_list_users_after_delete(client: TestClient, db_session):
     # Delete one user
     user_repo.soft_delete(user1.id)
     
-    # List users - should still show both (soft delete, not filtered)
+    # List users - should only show non-deleted users (soft-deleted are filtered)
     response = client.get("/api/v1/admin/users")
     
     assert response.status_code == 200
     data = response.json()
-    # Note: This behavior depends on your repository implementation
+    # Should only return 1 user (user2), not the soft-deleted user1
+    assert data["pagination"]["total"] == 1
+    assert len(data["data"]) == 1
+    assert data["data"][0]["id"] == str(user2.id)
     # Currently get_all doesn't filter by deleted_at, so both will show
     assert data["pagination"]["total"] == 2
 
