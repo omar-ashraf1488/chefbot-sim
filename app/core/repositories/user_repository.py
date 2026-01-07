@@ -1,4 +1,5 @@
 """User repository for database operations."""
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.repository import BaseRepository
@@ -15,4 +16,16 @@ class UserRepository(BaseRepository[User]):
             db: SQLAlchemy database session
         """
         super().__init__(db, User)
+    
+    def get_by_email(self, email: str):
+        """Get user by email address.
+        
+        Args:
+            email: The email address to search for
+            
+        Returns:
+            User instance if found, None otherwise
+        """
+        stmt = select(self.model).filter_by(email=email)
+        return self.db.scalar(stmt)
 
