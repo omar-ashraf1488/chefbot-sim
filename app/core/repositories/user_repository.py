@@ -18,7 +18,7 @@ class UserRepository(BaseRepository[User]):
         super().__init__(db, User)
     
     def get_by_email(self, email: str):
-        """Get user by email address.
+        """Get user by email address (excludes soft-deleted records).
         
         Args:
             email: The email address to search for
@@ -26,6 +26,6 @@ class UserRepository(BaseRepository[User]):
         Returns:
             User instance if found, None otherwise
         """
-        stmt = select(self.model).filter_by(email=email)
+        stmt = select(self.model).filter_by(email=email).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt)
 
