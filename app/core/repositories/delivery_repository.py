@@ -19,7 +19,7 @@ class DeliveryRepository(BaseRepository[Delivery]):
         super().__init__(db, Delivery)
     
     def get_by_order_id(self, order_id: UUID):
-        """Get delivery for a specific order.
+        """Get delivery for a specific order (excludes soft-deleted records).
         
         Args:
             order_id: The UUID of the order
@@ -27,11 +27,11 @@ class DeliveryRepository(BaseRepository[Delivery]):
         Returns:
             Delivery instance for the order, or None if not found
         """
-        stmt = select(self.model).filter_by(order_id=order_id)
+        stmt = select(self.model).filter_by(order_id=order_id).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt)
     
     def count_by_order_id(self, order_id: UUID) -> int:
-        """Count deliveries for a specific order.
+        """Count deliveries for a specific order (excludes soft-deleted records).
         
         Args:
             order_id: The UUID of the order
@@ -40,6 +40,6 @@ class DeliveryRepository(BaseRepository[Delivery]):
             Total count of deliveries for the order (typically 0 or 1)
         """
         from sqlalchemy import func
-        stmt = select(func.count(self.model.id)).filter_by(order_id=order_id)
+        stmt = select(func.count(self.model.id)).filter_by(order_id=order_id).filter(self.model.deleted_at.is_(None))
         return self.db.scalar(stmt) or 0
 
