@@ -29,6 +29,25 @@ class DeliveryCreate(DeliveryBase):
     pass
 
 
+class DeliveryUpdate(BaseModel):
+    """Schema for updating a delivery (all fields optional)."""
+    status: str | None = None
+    expected_delivery_date: datetime | None = None
+    actual_delivery_date: datetime | None = None
+    tracking_number: str | None = None
+    notes: str | None = None
+    
+    @field_validator('status')
+    @classmethod
+    def validate_status(cls, v: str | None) -> str | None:
+        """Validate that status is one of the allowed values if provided."""
+        if v is not None:
+            allowed_statuses = {"delivered", "delayed", "failed", "in_transit"}
+            if v not in allowed_statuses:
+                raise ValueError(f"Invalid status: {v}. Must be one of: {', '.join(allowed_statuses)}")
+        return v
+
+
 class DeliveryResponse(DeliveryBase):
     """Schema for delivery response (includes all fields except deleted_at)."""
     model_config = ConfigDict(from_attributes=True)
