@@ -256,10 +256,16 @@ def test_delete_recipe_success(client: TestClient, db_session):
     
     assert response.status_code == 204
     
-    # Verify recipe is soft deleted
-    deleted_recipe = recipe_repo.get(recipe.id)
+    # Verify recipe is soft deleted (query database directly to check deleted_at)
+    from sqlalchemy import select
+    from app.models.recipe import Recipe
+    stmt = select(Recipe).filter_by(id=recipe.id)
+    deleted_recipe = db_session.scalar(stmt)
     assert deleted_recipe is not None
     assert deleted_recipe.deleted_at is not None
+    
+    # Verify recipe is not returned by normal get() (soft-deleted records are filtered)
+    assert recipe_repo.get(recipe.id) is None
 
 
 def test_delete_recipe_not_found(client: TestClient, db_session):
