@@ -131,8 +131,9 @@ class BaseRepository(Generic[ModelType]):
         self.db.commit()
         
         if result.rowcount > 0:
-            # Get the updated instance directly (including soft-deleted ones)
-            return self.db.get(self.model, id)
+            # Get the updated instance directly using select (not filtered by deleted_at)
+            stmt = select(self.model).filter_by(id=id)
+            return self.db.scalar(stmt)
         return None
     
     def exists(self, id: UUID) -> bool:
