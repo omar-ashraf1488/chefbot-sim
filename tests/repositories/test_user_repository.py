@@ -2,6 +2,7 @@
 import pytest
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import ConflictError
 from app.core.repositories.user_repository import UserRepository
 from app.models.user import User
 
@@ -206,4 +207,29 @@ def test_exists_user_not_found(db_session: Session):
     non_existent_id = uuid.uuid4()
     
     assert repo.exists(non_existent_id) is False
+
+
+def test_create_duplicate_email_raises_conflict_error(db_session: Session):
+    """Test that creating a user with duplicate email raises ConflictError."""
+    repo = UserRepository(db_session)
+    
+    # Create first user
+    repo.create(
+        email="duplicate@example.com",
+        first_name="First",
+        last_name="User",
+        timezone="UTC"
+    )
+    
+    # Try to create second user with same email - should raise ConflictError
+    with pytest.raises(ConflictError) as exc_info:
+        repo.create(
+            email="duplicate@example.com",
+            first_name="Second",
+            last_name="User",
+            timezone="UTC"
+        )
+    
+    assert "already exists" in str(exc_info.value.message).lower() or "conflict" in str(exc_info.value.message).lower()
+    assert exc_info.value.status_code == 409
 
