@@ -47,3 +47,9 @@ class PaginatedResponse(BaseModel, Generic[T]):
     pagination: PaginationMeta = Field(description="Pagination metadata")
     message: Optional[str] = Field(None, description="Optional message for the response")
 
+
+class ErrorResponse(BaseModel):
+    """Standardized error response format."""
+    success: bool = Field(False, description="Indicates the request failed")
+    error: dict = Field(description="Error information")
+
