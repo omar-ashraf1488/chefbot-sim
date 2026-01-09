@@ -107,10 +107,7 @@ def update_user(
     if user_data.email is not None and user_data.email != user.email:
         existing_user = user_repo.get_by(email=user_data.email)
         if existing_user:
-            raise HTTPException(
-                status_code=400,
-                detail=f"User with email {user_data.email} already exists"
-            )
+            raise ConflictError(f"User with email {user_data.email} already exists")
     
     # Prepare update data (only include non-None fields)
     update_data = {k: v for k, v in user_data.model_dump().items() if v is not None}
