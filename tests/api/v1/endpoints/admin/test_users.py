@@ -95,8 +95,10 @@ def test_get_user_not_found(client: TestClient, db_session):
     
     assert response.status_code == 404
     data = response.json()
-    assert "detail" in data
-    assert str(fake_id) in data["detail"]
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert str(fake_id) in data["error"]["message"]
 
 
 def test_create_user_success(client: TestClient, db_session):
@@ -148,10 +150,12 @@ def test_create_user_duplicate_email(client: TestClient, db_session):
     
     response = client.post("/api/v1/admin/users", json=user_data)
     
-    assert response.status_code == 400
+    assert response.status_code == 409  # ConflictError
     data = response.json()
-    assert "detail" in data
-    assert "already exists" in data["detail"]
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert "already exists" in data["error"]["message"].lower() or "conflict" in data["error"]["message"].lower()
 
 
 def test_create_user_invalid_timezone(client: TestClient, db_session):
@@ -240,7 +244,10 @@ def test_update_user_not_found(client: TestClient, db_session):
     
     assert response.status_code == 404
     data = response.json()
-    assert "detail" in data
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert str(fake_id) in data["error"]["message"]
 
 
 def test_update_user_duplicate_email(client: TestClient, db_session):
@@ -269,10 +276,12 @@ def test_update_user_duplicate_email(client: TestClient, db_session):
     
     response = client.patch(f"/api/v1/admin/users/{user2.id}", json=update_data)
     
-    assert response.status_code == 400
+    assert response.status_code == 409  # ConflictError
     data = response.json()
-    assert "detail" in data
-    assert "already exists" in data["detail"]
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert "already exists" in data["error"]["message"].lower() or "conflict" in data["error"]["message"].lower()
 
 
 def test_update_user_no_changes(client: TestClient, db_session):
@@ -357,7 +366,10 @@ def test_delete_user_not_found(client: TestClient, db_session):
     
     assert response.status_code == 404
     data = response.json()
-    assert "detail" in data
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert str(fake_id) in data["error"]["message"]
 
 
 def test_list_users_after_delete(client: TestClient, db_session):
