@@ -4,8 +4,10 @@ from typing import Generic, TypeVar, Type, Optional, List
 from uuid import UUID
 
 from sqlalchemy import func, select, update, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.core.exceptions import ConflictError
 from app.models.base import BaseModel
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -36,12 +38,19 @@ class BaseRepository(Generic[ModelType]):
             
         Returns:
             The created and saved model instance
+            
+        Raises:
+            ConflictError: If there's a unique constraint violation
         """
-        instance = self.model(**kwargs)
-        self.db.add(instance)
-        self.db.commit()
-        self.db.refresh(instance)
-        return instance
+        try:
+            instance = self.model(**kwargs)
+            self.db.add(instance)
+            self.db.commit()
+            self.db.refresh(instance)
+            return instance
+        except IntegrityError:
+            self.db.rollback()
+            raise ConflictError("Resource already exists or violates constraints")
     
     def get(self, id: UUID) -> Optional[ModelType]:
         """Get a model by ID (excludes soft-deleted records).
@@ -90,13 +99,20 @@ class BaseRepository(Generic[ModelType]):
             
         Returns:
             The updated model instance or None if not found
+            
+        Raises:
+            ConflictError: If there's a unique constraint violation
         """
         instance = self.get(id)
         if instance:
-            for key, value in kwargs.items():
-                setattr(instance, key, value)
-            self.db.commit()
-            self.db.refresh(instance)
+            try:
+                for key, value in kwargs.items():
+                    setattr(instance, key, value)
+                self.db.commit()
+                self.db.refresh(instance)
+            except IntegrityError:
+                self.db.rollback()
+                raise ConflictError("Resource already exists or violates constraints")
         return instance
     
     def delete(self, id: UUID) -> bool:
