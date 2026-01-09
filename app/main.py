@@ -1,10 +1,17 @@
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
+from sqlalchemy.exc import IntegrityError
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.v1.api import api_router
+from app.api.v1.exceptions import (
+    api_exception_handler,
+    generic_exception_handler,
+    integrity_error_handler,
+)
 from app.core.config import settings
+from app.core.exceptions import APIException
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:
@@ -27,3 +34,8 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Register exception handlers
+app.add_exception_handler(APIException, api_exception_handler)
+app.add_exception_handler(IntegrityError, integrity_error_handler)
+app.add_exception_handler(Exception, generic_exception_handler)
