@@ -1,11 +1,12 @@
 """User profile API endpoints."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas import PaginatedResponse, PaginationMeta, Response
 from app.core.db import get_db
+from app.core.exceptions import NotFoundError, ConflictError
 from app.core.repositories.delivery_repository import DeliveryRepository
 from app.core.repositories.order_repository import OrderRepository
 from app.core.repositories.subscription_repository import SubscriptionRepository
@@ -42,7 +43,7 @@ def get_current_user(
     user = user_repo.get(current_user_id)
     
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     return Response(
         success=True,
@@ -65,16 +66,13 @@ def update_current_user(
     
     user = user_repo.get(current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     # Check email uniqueness if email is being updated
     if user_data.email and user_data.email != user.email:
         existing_user = user_repo.get_by_email(user_data.email)
         if existing_user and existing_user.id != current_user_id:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Email {user_data.email} is already in use"
-            )
+            raise ConflictError(f"Email {user_data.email} is already in use")
     
     # Prepare update data (only include non-None fields)
     update_data = {k: v for k, v in user_data.model_dump().items() if v is not None}
@@ -109,7 +107,7 @@ def delete_current_user(
     
     user = user_repo.get(current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     user_repo.soft_delete(current_user_id)
     
@@ -135,7 +133,7 @@ def get_current_user_subscriptions(
     # Verify user exists
     user = user_repo.get(current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     # Get all subscriptions for user
     all_subscriptions = subscription_repo.get_by_user_id(current_user_id)
@@ -177,7 +175,7 @@ def get_current_user_orders(
     # Verify user exists
     user = user_repo.get(current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     # Get all subscriptions for this user
     user_subscriptions = subscription_repo.get_by_user_id(current_user_id)
@@ -235,7 +233,7 @@ def get_current_user_deliveries(
     # Verify user exists
     user = user_repo.get(current_user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise NotFoundError("User not found")
     
     # Get all subscriptions for this user
     user_subscriptions = subscription_repo.get_by_user_id(current_user_id)

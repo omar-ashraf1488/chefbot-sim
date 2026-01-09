@@ -1,11 +1,12 @@
 """Admin user management endpoints."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.api.v1.schemas import PaginatedResponse, PaginationMeta, Response
 from app.core.db import get_db
+from app.core.exceptions import NotFoundError, ConflictError
 from app.core.repositories.subscription_repository import SubscriptionRepository
 from app.core.repositories.user_repository import UserRepository
 from app.schemas.subscription import SubscriptionResponse
@@ -50,7 +51,7 @@ def get_user(
     user = user_repo.get(user_id)
     
     if not user:
-        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+        raise NotFoundError(f"User with id {user_id} not found")
     
     return Response(
         success=True,
@@ -73,10 +74,7 @@ def create_user(
     # Check if user with email already exists
     existing_user = user_repo.get_by(email=user_data.email)
     if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail=f"User with email {user_data.email} already exists"
-        )
+        raise ConflictError(f"User with email {user_data.email} already exists")
     
     user = user_repo.create(**user_data.model_dump())
     
@@ -103,7 +101,7 @@ def update_user(
     # Check if user exists
     user = user_repo.get(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+        raise NotFoundError(f"User with id {user_id} not found")
     
     # Check if email is being updated and if it conflicts with existing user
     if user_data.email is not None and user_data.email != user.email:
@@ -149,7 +147,7 @@ def delete_user(
     # Check if user exists
     user = user_repo.get(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+        raise NotFoundError(f"User with id {user_id} not found")
     
     user_repo.soft_delete(user_id)
     return None
@@ -172,7 +170,7 @@ def get_user_subscriptions(
     # Verify user exists
     user = user_repo.get(user_id)
     if not user:
-        raise HTTPException(status_code=404, detail=f"User with id {user_id} not found")
+        raise NotFoundError(f"User with id {user_id} not found")
     
     subscription_repo = SubscriptionRepository(db)
     subscriptions = subscription_repo.get_by_user_id(user_id, skip=skip, limit=limit)
