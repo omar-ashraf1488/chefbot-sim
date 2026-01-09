@@ -154,8 +154,12 @@ def test_update_current_user_email_duplicate(client: TestClient, db_session):
     
     response = client.patch(f"/api/v1/users/me?user_id={user1.id}", json=update_data)
     
-    assert response.status_code == 400
-    assert "already in use" in response.json()["detail"].lower()
+    assert response.status_code == 409  # ConflictError
+    data = response.json()
+    assert data["success"] is False
+    assert "error" in data
+    assert "message" in data["error"]
+    assert "already" in data["error"]["message"].lower() or "conflict" in data["error"]["message"].lower()
 
 
 def test_update_current_user_email_same(client: TestClient, db_session):
