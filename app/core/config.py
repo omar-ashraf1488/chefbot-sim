@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Scheduler Configuration
+    SCHEDULER_ENABLED: bool = True
+    SCHEDULER_TIMEZONE: str = "UTC"
+    
+    # User Generation Task Settings
+    USER_GENERATION_ENABLED: bool = True
+    USER_GENERATION_COUNT: int = 5  # Number of users to generate per run
+    USER_GENERATION_INTERVAL: int = 60  # Interval in minutes
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
