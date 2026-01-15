@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -14,6 +15,13 @@ from app.api.v1.exceptions import (
 from app.core.config import settings
 from app.core.exceptions import APIException
 from app.core.scheduler import start_scheduler, stop_scheduler
+
+logging.basicConfig(
+    level=settings.LOG_LEVEL.upper(),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    force=True
+)
 
 
 def custom_generate_unique_id(route: APIRoute) -> str:

@@ -45,6 +45,9 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str = ""
     POSTGRES_DB: str = ""
 
+    # Logging Configuration
+    LOG_LEVEL: str = "DEBUG"
+
     # Scheduler Configuration
     SCHEDULER_ENABLED: bool = True
     SCHEDULER_TIMEZONE: str = "UTC"
