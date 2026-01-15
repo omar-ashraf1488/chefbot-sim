@@ -43,6 +43,9 @@ services:
       - "8000:8000"
     volumes:
       - ./app:/chefbot-sim/app
+      - ./alembic:/chefbot-sim/alembic
+      - ./scripts:/chefbot-sim/scripts
+    command: ["fastapi", "run", "--reload", "--host", "0.0.0.0", "app/main.py"]
     restart: unless-stopped
 
 volumes:
