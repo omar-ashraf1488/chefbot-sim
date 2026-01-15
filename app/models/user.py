@@ -17,4 +17,5 @@ class User(BaseModel):
     first_name = Column(String, nullable=False)
     last_name = Column(String, nullable=False)
     timezone = Column(String, nullable=False)
+    gender = Column(String, nullable=True)
     

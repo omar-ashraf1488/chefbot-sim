@@ -1,6 +1,7 @@
 """User Pydantic schemas for API validation."""
 from datetime import datetime
 from uuid import UUID
+from typing import Literal
 from pydantic import BaseModel, EmailStr, ConfigDict, field_validator
 import zoneinfo
 
@@ -11,6 +12,7 @@ class UserBase(BaseModel):
     first_name: str
     last_name: str
     timezone: str
+    gender: Literal["Male", "Female"] | None = None
     
     @field_validator('timezone')
     @classmethod
@@ -21,6 +23,14 @@ class UserBase(BaseModel):
             return v
         except Exception:
             raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone (e.g., 'America/New_York', 'UTC')")
+    
+    @field_validator('gender')
+    @classmethod
+    def validate_gender(cls, v: str | None) -> str | None:
+        """Validate that gender is either 'Male' or 'Female'."""
+        if v is not None and v not in ("Male", "Female"):
+            raise ValueError("Gender must be either 'Male' or 'Female'")
+        return v
 
 
 class UserCreate(UserBase):
@@ -34,6 +44,7 @@ class UserUpdate(BaseModel):
     first_name: str | None = None
     last_name: str | None = None
     timezone: str | None = None
+    gender: Literal["Male", "Female"] | None = None
     
     @field_validator('timezone')
     @classmethod
@@ -45,6 +56,14 @@ class UserUpdate(BaseModel):
                 return v
             except Exception:
                 raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone (e.g., 'America/New_York', 'UTC')")
+        return v
+    
+    @field_validator('gender')
+    @classmethod
+    def validate_gender(cls, v: str | None) -> str | None:
+        """Validate that gender is either 'Male' or 'Female'."""
+        if v is not None and v not in ("Male", "Female"):
+            raise ValueError("Gender must be either 'Male' or 'Female'")
         return v
 
 
