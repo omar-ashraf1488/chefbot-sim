@@ -47,6 +47,8 @@ def _register_tasks() -> None:
     """Import tasks to register them with the scheduler."""
     # Import tasks module to trigger decorator registration
     from app.core.tasks import user_generation  # noqa: F401
+    from app.core.tasks import recipe_generation  # noqa: F401
+    #from app.core.tasks import order_generation  # noqa: F401
 
 
 def get_scheduler() -> BackgroundScheduler:

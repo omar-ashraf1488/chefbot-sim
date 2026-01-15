@@ -55,7 +55,17 @@ class Settings(BaseSettings):
     # User Generation Task Settings
     USER_GENERATION_ENABLED: bool = True
     USER_GENERATION_COUNT: int = 5  # Number of users to generate per run
-    USER_GENERATION_INTERVAL: int = 60  # Interval in minutes
+    USER_GENERATION_INTERVAL: int = 20  # Interval in seconds
+    
+    # Recipe Generation Task Settings
+    RECIPE_GENERATION_ENABLED: bool = True
+    RECIPE_GENERATION_COUNT: int = 5  # Number of recipes to generate per run
+    RECIPE_GENERATION_INTERVAL: int = 5  # Interval in seconds
+    
+    # Order Generation Task Settings
+    ORDER_GENERATION_ENABLED: bool = True
+    ORDER_GENERATION_COUNT: int = 10  # Number of orders to generate per run
+    ORDER_GENERATION_INTERVAL: int = 120  # Interval in seconds
 
     @computed_field  # type: ignore[prop-decorator]
     @property
