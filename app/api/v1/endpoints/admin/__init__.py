@@ -1,7 +1,7 @@
 """Admin API endpoints."""
 from fastapi import APIRouter
 
-from app.api.v1.endpoints.admin import deliveries, orders, recipes, subscriptions, users
+from app.api.v1.endpoints.admin import deliveries, generation_settings, orders, recipes, subscriptions, users
 
 # Create admin router
 admin_router = APIRouter()
@@ -12,3 +12,4 @@ admin_router.include_router(recipes.router, prefix="/recipes", tags=["admin-reci
 admin_router.include_router(subscriptions.router, prefix="/subscriptions", tags=["admin-subscriptions"])
 admin_router.include_router(orders.router, prefix="/orders", tags=["admin-orders"])
 admin_router.include_router(deliveries.router, prefix="/deliveries", tags=["admin-deliveries"])
+admin_router.include_router(generation_settings.router, tags=["admin-generation-settings"])
