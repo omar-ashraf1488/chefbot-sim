@@ -15,7 +15,47 @@ logger = logging.getLogger(__name__)
 fake = Faker()
 
 DELIVERY_STATUSES = ["delivered", "delayed", "failed", "in_transit"]
-STATUS_WEIGHTS = [0.60, 0.15, 0.05, 0.20]  # 60% delivered, 15% delayed, 5% failed, 20% in_transit
+
+# Dynamic settings (can be updated via API)
+_delivery_generation_settings = {
+    "status_weights": [0.60, 0.15, 0.05, 0.20],  # Default: 60% delivered, 15% delayed, 5% failed, 20% in_transit
+    "interval": settings.DELIVERY_GENERATION_INTERVAL
+}
+
+
+def get_delivery_generation_settings():
+    """Get current delivery generation settings."""
+    return _delivery_generation_settings.copy()
+
+
+def update_delivery_generation_settings(status_weights=None, interval=None):
+    """Update delivery generation settings."""
+    if status_weights is not None:
+        if len(status_weights) != 4:
+            raise ValueError("status_weights must have exactly 4 values")
+        if abs(sum(status_weights) - 1.0) > 0.01:
+            raise ValueError("status_weights must sum to approximately 1.0")
+        _delivery_generation_settings["status_weights"] = status_weights
+    
+    if interval is not None:
+        if interval < 1:
+            raise ValueError("interval must be at least 1 second")
+        _delivery_generation_settings["interval"] = interval
+        _update_scheduler_job()
+    
+    return _delivery_generation_settings.copy()
+
+
+def _update_scheduler_job():
+    """Update the scheduler job interval."""
+    job = scheduler.get_job("generate_deliveries")
+    if job:
+        scheduler.reschedule_job(
+            "generate_deliveries",
+            trigger="interval",
+            seconds=_delivery_generation_settings["interval"]
+        )
+        logger.info(f"Updated delivery generation interval to {_delivery_generation_settings['interval']} seconds")
 
 
 def _create_delivery(
@@ -29,8 +69,9 @@ def _create_delivery(
         if existing:
             return False  # Skip if delivery already exists
         
-        # Select status with weighted distribution
-        status = random.choices(DELIVERY_STATUSES, weights=STATUS_WEIGHTS)[0]
+        # Select status with weighted distribution (using dynamic weights)
+        weights = _delivery_generation_settings["status_weights"]
+        status = random.choices(DELIVERY_STATUSES, weights=weights)[0]
         
         # Expected delivery: 2-5 days after order date
         days_after_order = random.randint(2, 5)
