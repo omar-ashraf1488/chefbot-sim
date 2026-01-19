@@ -62,10 +62,18 @@ class Settings(BaseSettings):
     RECIPE_GENERATION_COUNT: int = 5  # Number of recipes to generate per run
     RECIPE_GENERATION_INTERVAL: int = 5  # Interval in seconds
     
+    # Subscription Generation Task Settings
+    SUBSCRIPTION_GENERATION_COUNT: int = 5  # Number of subscriptions to generate per run
+    SUBSCRIPTION_GENERATION_INTERVAL: int = 10  # Interval in seconds
+    
     # Order Generation Task Settings
     ORDER_GENERATION_ENABLED: bool = True
     ORDER_GENERATION_COUNT: int = 10  # Number of orders to generate per run
-    ORDER_GENERATION_INTERVAL: int = 120  # Interval in seconds
+    ORDER_GENERATION_INTERVAL: int = 10  # Interval in seconds
+    
+    # Delivery Generation Task Settings
+    DELIVERY_GENERATION_COUNT: int = 5  # Number of deliveries to generate per run
+    DELIVERY_GENERATION_INTERVAL: int = 15  # Interval in seconds
 
     @computed_field  # type: ignore[prop-decorator]
     @property
