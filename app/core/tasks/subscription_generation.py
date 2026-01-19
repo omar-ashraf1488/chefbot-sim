@@ -15,7 +15,48 @@ logger = logging.getLogger(__name__)
 fake = Faker()
 
 SUBSCRIPTION_STATUSES = ["Active", "Paused", "Cancelled"]
-STATUS_WEIGHTS = [0.70, 0.15, 0.15]  # 70% Active, 15% Paused, 15% Cancelled
+
+# Dynamic settings (can be updated via API)
+_subscription_generation_settings = {
+    "status_weights": [0.70, 0.15, 0.15],  # Default: 70% Active, 15% Paused, 15% Cancelled
+    "interval": settings.SUBSCRIPTION_GENERATION_INTERVAL
+}
+
+
+def get_subscription_generation_settings():
+    """Get current subscription generation settings."""
+    return _subscription_generation_settings.copy()
+
+
+def update_subscription_generation_settings(status_weights=None, interval=None):
+    """Update subscription generation settings."""
+    if status_weights is not None:
+        if len(status_weights) != 3:
+            raise ValueError("status_weights must have exactly 3 values")
+        if abs(sum(status_weights) - 1.0) > 0.01:
+            raise ValueError("status_weights must sum to approximately 1.0")
+        _subscription_generation_settings["status_weights"] = status_weights
+    
+    if interval is not None:
+        if interval < 1:
+            raise ValueError("interval must be at least 1 second")
+        _subscription_generation_settings["interval"] = interval
+        # Update scheduler job
+        _update_scheduler_job()
+    
+    return _subscription_generation_settings.copy()
+
+
+def _update_scheduler_job():
+    """Update the scheduler job interval."""
+    job = scheduler.get_job("generate_subscriptions")
+    if job:
+        scheduler.reschedule_job(
+            "generate_subscriptions",
+            trigger="interval",
+            seconds=_subscription_generation_settings["interval"]
+        )
+        logger.info(f"Updated subscription generation interval to {_subscription_generation_settings['interval']} seconds")
 
 # Simple preference options
 PREFERENCE_OPTIONS = [
@@ -38,8 +79,9 @@ def _create_subscription(
         # Select random user
         user = random.choice(available_users)
         
-        # Select status with weighted distribution
-        status = random.choices(SUBSCRIPTION_STATUSES, weights=STATUS_WEIGHTS)[0]
+        # Select status with weighted distribution (using dynamic weights)
+        weights = _subscription_generation_settings["status_weights"]
+        status = random.choices(SUBSCRIPTION_STATUSES, weights=weights)[0]
         
         # Random preferences (50% chance)
         preferences = None
