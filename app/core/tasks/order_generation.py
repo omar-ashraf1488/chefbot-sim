@@ -17,12 +17,53 @@ logger = logging.getLogger(__name__)
 fake = Faker()
 
 ORDER_STATUSES = ["pending", "shipped", "delivered", "cancelled"]
-ORDER_STATUS_WEIGHTS = [0.15, 0.20, 0.60, 0.05]  # 15% pending, 20% shipped, 60% delivered, 5% cancelled
+
+# Dynamic settings (can be updated via API)
+_order_generation_settings = {
+    "status_weights": [0.15, 0.20, 0.60, 0.05],  # Default: 15% pending, 20% shipped, 60% delivered, 5% cancelled
+    "interval": settings.ORDER_GENERATION_INTERVAL
+}
+
+
+def get_order_generation_settings():
+    """Get current order generation settings."""
+    return _order_generation_settings.copy()
+
+
+def update_order_generation_settings(status_weights=None, interval=None):
+    """Update order generation settings."""
+    if status_weights is not None:
+        if len(status_weights) != 4:
+            raise ValueError("status_weights must have exactly 4 values")
+        if abs(sum(status_weights) - 1.0) > 0.01:
+            raise ValueError("status_weights must sum to approximately 1.0")
+        _order_generation_settings["status_weights"] = status_weights
+    
+    if interval is not None:
+        if interval < 1:
+            raise ValueError("interval must be at least 1 second")
+        _order_generation_settings["interval"] = interval
+        _update_scheduler_job()
+    
+    return _order_generation_settings.copy()
+
+
+def _update_scheduler_job():
+    """Update the scheduler job interval."""
+    job = scheduler.get_job("generate_orders")
+    if job:
+        scheduler.reschedule_job(
+            "generate_orders",
+            trigger="interval",
+            seconds=_order_generation_settings["interval"]
+        )
+        logger.info(f"Updated order generation interval to {_order_generation_settings['interval']} seconds")
 
 
 def _select_weighted_status() -> str:
     """Select order status with weighted probability."""
-    return random.choices(ORDER_STATUSES, weights=ORDER_STATUS_WEIGHTS)[0]
+    weights = _order_generation_settings["status_weights"]
+    return random.choices(ORDER_STATUSES, weights=weights)[0]
 
 
 def _calculate_total_amount(recipes: list[dict], recipe_prices: dict) -> Decimal:
