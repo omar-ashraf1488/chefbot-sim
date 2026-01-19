@@ -2,7 +2,6 @@
 import logging
 import random
 from datetime import datetime, timedelta
-from faker import Faker
 
 from app.core.config import settings
 from app.core.db import SessionLocal
@@ -11,8 +10,6 @@ from app.core.repositories.order_repository import OrderRepository
 from app.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
-
-fake = Faker()
 
 DELIVERY_STATUSES = ["delivered", "delayed", "failed", "in_transit"]
 
