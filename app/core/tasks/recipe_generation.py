@@ -13,6 +13,39 @@ logger = logging.getLogger(__name__)
 
 fake = Faker()
 
+# Dynamic settings (can be updated via API)
+_recipe_generation_settings = {
+    "interval": settings.RECIPE_GENERATION_INTERVAL
+}
+
+
+def get_recipe_generation_settings():
+    """Get current recipe generation settings."""
+    return _recipe_generation_settings.copy()
+
+
+def update_recipe_generation_settings(interval=None):
+    """Update recipe generation settings."""
+    if interval is not None:
+        if interval < 1:
+            raise ValueError("interval must be at least 1 second")
+        _recipe_generation_settings["interval"] = interval
+        _update_scheduler_job()
+    
+    return _recipe_generation_settings.copy()
+
+
+def _update_scheduler_job():
+    """Update the scheduler job interval."""
+    job = scheduler.get_job("generate_recipes")
+    if job:
+        scheduler.reschedule_job(
+            "generate_recipes",
+            trigger="interval",
+            seconds=_recipe_generation_settings["interval"]
+        )
+        logger.info(f"Updated recipe generation interval to {_recipe_generation_settings['interval']} seconds")
+
 # Predefined recipe tags for realistic categorization
 RECIPE_TAGS = [
     "Keto",
