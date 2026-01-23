@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generation Settings</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        h1 {
+            margin-bottom: 30px;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #fafafa;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        .section h2 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 1.3em;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+        .status-weights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .status-weight-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .status-weight-item label {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .help-text {
+            font-size: 0.85em;
+            color: #666;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        .submit-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        .submit-btn:hover {
+            background: #2980b9;
+        }
+        .submit-btn:active {
+            transform: scale(0.98);
+        }
+        .message {
+            padding: 12px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generation Settings Configuration</h1>
+        
+        {% if message %}
+        <div class="message {{ 'success' if success else 'error' }}">
+            {{ message }}
+        </div>
+        {% endif %}
+
+        <form method="post" action="/api/v1/admin/generation/settings/form">
+            <!-- User Generation Settings -->
+            <div class="section">
+                <h2>User Generation Settings</h2>
+                
+                <div class="form-group">
+                    <label for="user_male_weight">Male Weight (0.0 to 1.0)</label>
+                    <input type="number" 
+                           id="user_male_weight" 
+                           name="user_male_weight" 
+                           step="0.01" 
+                           min="0" 
+                           max="1"
+                           value="{{ settings.user.male_weight if settings.user.male_weight is not none else '' }}">
+                    <div class="help-text">Female weight is automatically 1.0 - male_weight</div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user_interval">Generation Interval (seconds)</label>
+                    <input type="number" 
+                           id="user_interval" 
+                           name="user_interval" 
+                           min="1"
+                           value="{{ settings.user.interval if settings.user.interval is not none else '' }}">
+                </div>
+            </div>
+
+            <!-- Recipe Generation Settings -->
+            <div class="section">
+                <h2>Recipe Generation Settings</h2>
+                
+                <div class="form-group">
+                    <label for="recipe_interval">Generation Interval (seconds)</label>
+                    <input type="number" 
+                           id="recipe_interval" 
+                           name="recipe_interval" 
+                           min="1"
+                           value="{{ settings.recipe.interval if settings.recipe.interval is not none else '' }}">
+                </div>
+            </div>
+
+            <!-- Subscription Generation Settings -->
+            <div class="section">
+                <h2>Subscription Generation Settings</h2>
+                
+                <div class="form-group">
+                    <label>Status Weights (must sum to 1.0)</label>
+                    <div class="help-text">Weights for [Active, Paused, Cancelled]</div>
+                    <div class="status-weights">
+                        <div class="status-weight-item">
+                            <label for="subscription_status_0">Active</label>
+                            <input type="number" 
+                                   id="subscription_status_0" 
+                                   name="subscription_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.subscription.status_weights[0] if settings.subscription.status_weights and settings.subscription.status_weights|length > 0 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="subscription_status_1">Paused</label>
+                            <input type="number" 
+                                   id="subscription_status_1" 
+                                   name="subscription_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.subscription.status_weights[1] if settings.subscription.status_weights and settings.subscription.status_weights|length > 1 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="subscription_status_2">Cancelled</label>
+                            <input type="number" 
+                                   id="subscription_status_2" 
+                                   name="subscription_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.subscription.status_weights[2] if settings.subscription.status_weights and settings.subscription.status_weights|length > 2 else '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="subscription_interval">Generation Interval (seconds)</label>
+                    <input type="number" 
+                           id="subscription_interval" 
+                           name="subscription_interval" 
+                           min="1"
+                           value="{{ settings.subscription.interval if settings.subscription.interval is not none else '' }}">
+                </div>
+            </div>
+
+            <!-- Order Generation Settings -->
+            <div class="section">
+                <h2>Order Generation Settings</h2>
+                
+                <div class="form-group">
+                    <label>Status Weights (must sum to 1.0)</label>
+                    <div class="help-text">Weights for [pending, shipped, delivered, cancelled]</div>
+                    <div class="status-weights">
+                        <div class="status-weight-item">
+                            <label for="order_status_0">Pending</label>
+                            <input type="number" 
+                                   id="order_status_0" 
+                                   name="order_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.order.status_weights[0] if settings.order.status_weights and settings.order.status_weights|length > 0 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="order_status_1">Shipped</label>
+                            <input type="number" 
+                                   id="order_status_1" 
+                                   name="order_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.order.status_weights[1] if settings.order.status_weights and settings.order.status_weights|length > 1 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="order_status_2">Delivered</label>
+                            <input type="number" 
+                                   id="order_status_2" 
+                                   name="order_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.order.status_weights[2] if settings.order.status_weights and settings.order.status_weights|length > 2 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="order_status_3">Cancelled</label>
+                            <input type="number" 
+                                   id="order_status_3" 
+                                   name="order_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.order.status_weights[3] if settings.order.status_weights and settings.order.status_weights|length > 3 else '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="order_interval">Generation Interval (seconds)</label>
+                    <input type="number" 
+                           id="order_interval" 
+                           name="order_interval" 
+                           min="1"
+                           value="{{ settings.order.interval if settings.order.interval is not none else '' }}">
+                </div>
+            </div>
+
+            <!-- Delivery Generation Settings -->
+            <div class="section">
+                <h2>Delivery Generation Settings</h2>
+                
+                <div class="form-group">
+                    <label>Status Weights (must sum to 1.0)</label>
+                    <div class="help-text">Weights for [delivered, delayed, failed, in_transit]</div>
+                    <div class="status-weights">
+                        <div class="status-weight-item">
+                            <label for="delivery_status_0">Delivered</label>
+                            <input type="number" 
+                                   id="delivery_status_0" 
+                                   name="delivery_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.delivery.status_weights[0] if settings.delivery.status_weights and settings.delivery.status_weights|length > 0 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="delivery_status_1">Delayed</label>
+                            <input type="number" 
+                                   id="delivery_status_1" 
+                                   name="delivery_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.delivery.status_weights[1] if settings.delivery.status_weights and settings.delivery.status_weights|length > 1 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="delivery_status_2">Failed</label>
+                            <input type="number" 
+                                   id="delivery_status_2" 
+                                   name="delivery_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.delivery.status_weights[2] if settings.delivery.status_weights and settings.delivery.status_weights|length > 2 else '' }}">
+                        </div>
+                        <div class="status-weight-item">
+                            <label for="delivery_status_3">In Transit</label>
+                            <input type="number" 
+                                   id="delivery_status_3" 
+                                   name="delivery_status_weights" 
+                                   step="0.01" 
+                                   min="0" 
+                                   max="1"
+                                   value="{{ settings.delivery.status_weights[3] if settings.delivery.status_weights and settings.delivery.status_weights|length > 3 else '' }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="delivery_interval">Generation Interval (seconds)</label>
+                    <input type="number" 
+                           id="delivery_interval" 
+                           name="delivery_interval" 
+                           min="1"
+                           value="{{ settings.delivery.interval if settings.delivery.interval is not none else '' }}">
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn">Update Settings</button>
+        </form>
+    </div>
+</body>
+</html>
