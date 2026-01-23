@@ -1,10 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.routing import APIRoute
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.cors import CORSMiddleware
+from starlette.templating import Jinja2Templates
 
 from app.api.v1.api import api_router
 from app.api.v1.exceptions import (
@@ -26,6 +28,11 @@ logging.basicConfig(
 
 def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
+
+
+# Set up Jinja2 templates
+templates_dir = Path(__file__).parent / "templates"
+templates = Jinja2Templates(directory=str(templates_dir))
 
 
 @asynccontextmanager
@@ -56,6 +63,9 @@ if settings.all_cors_origins:
     )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Make templates available to the app
+app.state.templates = templates
 
 # Register exception handlers
 app.add_exception_handler(APIException, api_exception_handler)
