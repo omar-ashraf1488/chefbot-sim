@@ -128,13 +128,8 @@ jobs:
 
           # Build tags array
           if [[ "$IS_RELEASE" == "true" ]]; then
-            # For releases, add semantic version tags (v0.2.0, v0.2, v0)
-            VERSION_MAJOR_MINOR="${{ needs.extract-version.outputs.version-major-minor }}"
-            VERSION_MAJOR="${{ needs.extract-version.outputs.version-major }}"
-
+            # For releases, add exact version tag (v0.0.1)
             TAGS="$IMAGE_NAME:v$VERSION"
-            TAGS="$TAGS,$IMAGE_NAME:v$VERSION_MAJOR_MINOR"
-            TAGS="$TAGS,$IMAGE_NAME:v$VERSION_MAJOR"
           else
             # For dev builds, add branch name and SHA
             BRANCH_NAME=${GITHUB_REF#refs/heads/}
