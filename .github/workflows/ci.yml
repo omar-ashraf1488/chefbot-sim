@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [ "*" ]
+    tags:
+      - '*'
 
 jobs:
   test:
@@ -50,10 +52,59 @@ jobs:
           POSTGRES_DB: testdb
         run: poetry run pytest tests/${{ matrix.test-category }}/
 
+  extract-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version-major-minor: ${{ steps.version.outputs.version-major-minor }}
+      version-major: ${{ steps.version.outputs.version-major }}
+      is-release: ${{ steps.version.outputs.is-release }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Extract version from tag
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            # Extract version from tag (handle both v0.2.0 and 0.2.0)
+            TAG_NAME=${GITHUB_REF#refs/tags/}
+            if [[ "$TAG_NAME" =~ ^v ]]; then
+              # Tag starts with v (e.g., v0.2.0 -> 0.2.0)
+              VERSION=${TAG_NAME#v}
+            else
+              # Tag without v (e.g., 0.2.0 -> 0.2.0)
+              VERSION=$TAG_NAME
+            fi
+
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is-release=true" >> $GITHUB_OUTPUT
+
+            # Extract major.minor (e.g., 0.2.0 -> 0.2)
+            VERSION_MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+            echo "version-major-minor=$VERSION_MAJOR_MINOR" >> $GITHUB_OUTPUT
+
+            # Extract major (e.g., 0.2.0 -> 0)
+            VERSION_MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            echo "version-major=$VERSION_MAJOR" >> $GITHUB_OUTPUT
+          else
+            # For branch pushes, use commit SHA
+            VERSION="dev-${GITHUB_SHA:0:7}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "is-release=false" >> $GITHUB_OUTPUT
+            echo "version-major-minor=" >> $GITHUB_OUTPUT
+            echo "version-major=" >> $GITHUB_OUTPUT
+          fi
+          echo "Extracted version: ${{ steps.version.outputs.version }}"
+
   docker:
     runs-on: ubuntu-latest
-    needs: test
-    
+    needs: [test, extract-version]
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,10 +112,66 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       
-      - name: Build Docker image
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Generate Docker tags
+        id: meta
+        run: |
+          IMAGE_NAME="ghcr.io/${{ github.repository }}"
+          VERSION="${{ needs.extract-version.outputs.version }}"
+          IS_RELEASE="${{ needs.extract-version.outputs.is-release }}"
+
+          # Build tags array
+          if [[ "$IS_RELEASE" == "true" ]]; then
+            # For releases, add semantic version tags (v0.2.0, v0.2, v0)
+            VERSION_MAJOR_MINOR="${{ needs.extract-version.outputs.version-major-minor }}"
+            VERSION_MAJOR="${{ needs.extract-version.outputs.version-major }}"
+
+            TAGS="$IMAGE_NAME:v$VERSION"
+            TAGS="$TAGS,$IMAGE_NAME:v$VERSION_MAJOR_MINOR"
+            TAGS="$TAGS,$IMAGE_NAME:v$VERSION_MAJOR"
+          else
+            # For dev builds, add branch name and SHA
+            BRANCH_NAME=${GITHUB_REF#refs/heads/}
+            BRANCH_NAME=${BRANCH_NAME//\//-}  # Replace / with -
+            TAGS="$IMAGE_NAME:$BRANCH_NAME-$VERSION"
+          fi
+
+          echo "tags=$TAGS" >> $GITHUB_OUTPUT
+          echo "Generated tags: $TAGS"
+      
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
-          tags: chefbot-sim:latest
+          push: ${{ needs.extract-version.outputs.is-release == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [test, docker]
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
