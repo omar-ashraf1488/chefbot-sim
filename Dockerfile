@@ -50,4 +50,4 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 EXPOSE 8000
 
 ENTRYPOINT ["/bin/bash", "/chefbot-sim/scripts/entrypoint.sh"]
-CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+CMD ["fastapi", "run", "--workers", "1", "app/main.py"]
