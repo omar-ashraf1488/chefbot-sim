@@ -49,4 +49,8 @@ COPY --from=builder /usr/local/bin /usr/local/bin
 # Expose port 8000
 EXPOSE 8000
 
+# Make entrypoint script executable
+RUN chmod +x scripts/entrypoint.sh
+
+ENTRYPOINT ["scripts/entrypoint.sh"]
 CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
